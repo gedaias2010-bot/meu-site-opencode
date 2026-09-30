@@ -764,7 +764,7 @@
                 <p style="color: #1976d2; font-weight: 600; margin-bottom: 10px;">💳 Pagamento via Pix</p>
                 <p style="color: #666; font-size: 14px; margin-bottom: 5px;">Chave Pix:</p>
                 <div style="display: flex; gap: 10px; align-items: center;">
-                    <input type="text" id="pixKey" value="toptv24h@pagamento.com" style="flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 5px; font-size: 14px;" readonly>
+                    <input type="text" id="pixKey" value="eca5427d-f9e3-42f1-8811-f58acc9eb88f" style="flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 5px; font-size: 14px;" readonly>
                     <button class="btn btn-primary btn-sm" onclick="copiarPix()">📋 Copiar</button>
                 </div>
             </div>
@@ -1135,7 +1135,7 @@
             const diffTime = vencimento - hoje;
             const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
             
-            const pixKey = localStorage.getItem('pixKey') || 'toptv24h@pagamento.com';
+            const pixKey = localStorage.getItem('pixKey') || 'eca5427d-f9e3-42f1-8811-f58acc9eb88f';
 
             content.innerHTML = `
                 <div style="background: rgba(0,255,136,0.1); border: 1px solid rgba(0,255,136,0.3); border-radius: 10px; padding: 15px; margin-bottom: 15px;">
@@ -1784,7 +1784,7 @@
         }
 
         function configurarPix() {
-            const novaChave = prompt('Digite a nova chave Pix:', 'toptv24h@pagamento.com');
+            const novaChave = prompt('Digite a nova chave Pix:', 'eca5427d-f9e3-42f1-8811-f58acc9eb88f');
             if (novaChave && novaChave.trim()) {
                 localStorage.setItem('pixKey', novaChave.trim());
                 document.getElementById('pixKey').value = novaChave.trim();
@@ -1838,7 +1838,7 @@
             const cliente = clientes.find(c => c.id === faturaClienteId);
             if (!cliente) return;
 
-            const mensagem = `Olá ${cliente.nome}!%0A%0ASua fatura da Top TV 24h está disponível.%0A%0APlano: ${cliente.plano}%0AValor: ${formatarValor(cliente.valor)}%0AVencimento: ${formatarData(new Date(new Date(cliente.dataCadastro).getTime() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0])}%0A%0APague via Pix:%0AChave: toptv24h@pagamento.com%0A%0AObrigado pela preferência!`;
+            const mensagem = `Olá ${cliente.nome}!%0A%0ASua fatura da Top TV 24h está disponível.%0A%0APlano: ${cliente.plano}%0AValor: ${formatarValor(cliente.valor)}%0AVencimento: ${formatarData(new Date(new Date(cliente.dataCadastro).getTime() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0])}%0A%0APague via Pix:%0AChave: eca5427d-f9e3-42f1-8811-f58acc9eb88f%0A%0AObrigado pela preferência!`;
 
             const telefone = cliente.telefone.replace(/\D/g, '');
             const url = `https://wa.me/55${telefone}?text=${mensagem}`;
