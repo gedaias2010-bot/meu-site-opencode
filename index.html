@@ -549,6 +549,20 @@
         </div>
     </div>
 
+    <!-- Modal Gerenciar Usuários -->
+    <div id="modalGerenciarUsuarios" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 3000; justify-content: center; align-items: center;">
+        <div style="background: #1a1a2e; border: 1px solid rgba(255,255,255,0.1); border-radius: 15px; padding: 30px; max-width: 900px; width: 95%; max-height: 90vh; overflow-y: auto;">
+            <h2 style="color: #00d4ff; margin-bottom: 20px;">👥 Gerenciar Usuários</h2>
+            <p style="color: #aaa; font-size: 14px; margin-bottom: 20px;">Gerencie os usuários cadastrados no sistema.</p>
+            
+            <div id="listaUsuarios"></div>
+            
+            <div style="display: flex; gap: 10px; margin-top: 20px;">
+                <button class="btn btn-warning" onclick="fecharGerenciarUsuarios()" style="flex: 1;">❌ Fechar</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Informações do Usuário -->
     <div class="user-info" id="userInfo" style="display: none;">
         <div>
@@ -723,6 +737,9 @@
                 </button>
                 <button class="btn btn-success" onclick="mostrarGerenciarCadastros()" style="padding: 20px;">
                     📋 Gerenciar Cadastros<br><small>Contas de Acesso</small>
+                </button>
+                <button class="btn btn-primary" onclick="mostrarGerenciarUsuarios()" style="padding: 20px;">
+                    👥 Gerenciar Usuários<br><small>Clientes Cadastrados</small>
                 </button>
             </div>
 
@@ -1117,6 +1134,77 @@
             alert(`Senha do usuário "${username}" redefinida com sucesso!`);
         }
 
+        // Gerenciar Usuários (apenas admin)
+        function mostrarGerenciarUsuarios() {
+            if (!USUARIOS['admin']) {
+                alert('Acesso restrito ao administrador!');
+                return;
+            }
+            fecharConfiguracoes();
+            document.getElementById('modalGerenciarUsuarios').style.display = 'flex';
+            renderizarListaUsuarios();
+        }
+
+        function fecharGerenciarUsuarios() {
+            document.getElementById('modalGerenciarUsuarios').style.display = 'none';
+        }
+
+        function renderizarListaUsuarios() {
+            const lista = document.getElementById('listaUsuarios');
+            let html = '<table style="width: 100%; border-collapse: collapse;">';
+            html += '<tr style="background: rgba(0,212,255,0.1);"><th style="padding: 10px; text-align: left; color: #00d4ff;">Nome</th><th style="padding: 10px; text-align: left; color: #00d4ff;">Telefone</th><th style="padding: 10px; text-align: left; color: #00d4ff;">Plano</th><th style="padding: 10px; text-align: left; color: #00d4ff;">Status</th><th style="padding: 10px; text-align: left; color: #00d4ff;">Ações</th></tr>';
+            
+            for (const [username, dados] of Object.entries(USUARIOS)) {
+                if (username === 'admin' || username === 'user') continue;
+                
+                const status = dados.status || 'ativo';
+                const statusCor = status === 'ativo' ? '#00ff88' : '#ff4757';
+                
+                html += `<tr>
+                    <td style="padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.1);">${dados.nome || '-'}</td>
+                    <td style="padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.1);">${dados.telefone || '-'}</td>
+                    <td style="padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.1);">${dados.plano || '-'}</td>
+                    <td style="padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.1);"><span style="color: ${statusCor}; font-weight: bold;">${status}</span></td>
+                    <td style="padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.1);">
+                        <button class="btn btn-danger btn-sm" onclick="removerUsuario('${username}')" style="margin-right: 5px;">🗑️ Remover</button>
+                        <button class="btn btn-warning btn-sm" onclick="toggleStatusUsuario('${username}')">${status === 'ativo' ? '🔴 Desativar' : '🟢 Ativar'}</button>
+                    </td>
+                </tr>`;
+            }
+            
+            html += '</table>';
+            lista.innerHTML = html;
+        }
+
+        function removerUsuario(username) {
+            if (username === 'admin' || username === 'user') {
+                alert('Não é possível remover usuários do sistema!');
+                return;
+            }
+            
+            if (!confirm(`Tem certeza que deseja remover o usuário "${username}"?`)) {
+                return;
+            }
+            
+            delete USUARIOS[username];
+            salvarUsuarios();
+            renderizarListaUsuarios();
+            alert(`Usuário "${username}" removido com sucesso!`);
+        }
+
+        function toggleStatusUsuario(username) {
+            if (username === 'admin' || username === 'user') {
+                alert('Não é possível alterar o status de usuários do sistema!');
+                return;
+            }
+            
+            const statusAtual = USUARIOS[username].status || 'ativo';
+            USUARIOS[username].status = statusAtual === 'ativo' ? 'inativo' : 'ativo';
+            salvarUsuarios();
+            renderizarListaUsuarios();
+            alert(`Status do usuário "${username}" alterado para ${USUARIOS[username].status}!`);
+        }
+
         // Login Cliente
         function mostrarLoginCliente() {
             document.getElementById('modalLoginCliente').style.display = 'flex';
@@ -1151,6 +1239,14 @@
                 if (confirm('Cliente não encontrado! Deseja fazer um pré-cadastro?')) {
                     mostrarPreCadastro(nome, celular);
                 }
+                return;
+            }
+
+            // Verificar se o usuário está ativo
+            const username = cliente.telefone.replace(/\D/g, '');
+            if (USUARIOS[username] && USUARIOS[username].status === 'inativo') {
+                errorDiv.textContent = 'Usuário desativado! Contate o administrador.';
+                errorDiv.style.display = 'block';
                 return;
             }
 
@@ -1231,6 +1327,21 @@
 
             preCadastros.push(novoPreCadastro);
             salvarPreCadastros();
+
+            // Criar acesso automaticamente para o usuário
+            const username = celular.replace(/\D/g, '');
+            if (!USUARIOS[username]) {
+                USUARIOS[username] = {
+                    senha: username,
+                    nivel: 'cliente',
+                    nome: nome,
+                    telefone: celular,
+                    email: email,
+                    plano: plano,
+                    status: 'ativo'
+                };
+                salvarUsuarios();
+            }
 
             // Enviar alerta via WhatsApp para o administrador
             enviarAlertaWhatsApp(novoPreCadastro);
