@@ -704,6 +704,9 @@
                 <button class="btn btn-success" onclick="mostrarGraficos()" style="padding: 20px;">
                     📊 Gráficos<br><small>Clientes e Financeiro</small>
                 </button>
+                <button class="btn btn-primary" onclick="configurarNumeroAdmin()" style="padding: 20px;">
+                    📱 Configurar WhatsApp<br><small>Número para Alertas</small>
+                </button>
             </div>
 
             <div id="configContent"></div>
@@ -819,6 +822,22 @@
                 setTimeout(() => {
                     document.getElementById('loginError').style.display = 'none';
                 }, 3000);
+            }
+        }
+
+        // Configurar Número do Administrador para Alertas
+        function configurarNumeroAdmin() {
+            const numeroAtual = localStorage.getItem('numeroAdmin') || '';
+            const novoNumero = prompt('Digite o número do WhatsApp do administrador (com DDD, apenas números):', numeroAtual);
+            
+            if (novoNumero && novoNumero.trim()) {
+                const numeroLimpo = novoNumero.replace(/\D/g, '');
+                if (numeroLimpo.length >= 10 && numeroLimpo.length <= 13) {
+                    localStorage.setItem('numeroAdmin', numeroLimpo);
+                    alert('Número configurado com sucesso!');
+                } else {
+                    alert('Número inválido! Digite um número válido com DDD.');
+                }
             }
         }
 
@@ -1121,8 +1140,26 @@
             preCadastros.push(novoPreCadastro);
             salvarPreCadastros();
 
+            // Enviar alerta via WhatsApp para o administrador
+            enviarAlertaWhatsApp(novoPreCadastro);
+
             // Mostrar informações do pré-cadastro
             mostrarInfoPreCadastro(novoPreCadastro);
+        }
+
+        function enviarAlertaWhatsApp(preCadastro) {
+            // Número do administrador (configure aqui)
+            const numeroAdmin = localStorage.getItem('numeroAdmin') || '';
+            
+            if (!numeroAdmin) {
+                alert('Configure o número do administrador para receber alertas!');
+                return;
+            }
+
+            const mensagem = `🔔 *NOVO PRÉ-CADASTRO*%0A%0A👤 Nome: ${preCadastro.nome}%0A📱 Telefone: ${preCadastro.telefone}%0A📧 E-mail: ${preCadastro.email}%0A📺 Plano: ${preCadastro.plano}%0A💰 Valor: R$ ${preCadastro.valor.toFixed(2)}%0A📅 Data: ${preCadastro.dataCadastro}%0A%0A⚠️ Aguardando aprovação!`;
+
+            const url = `https://wa.me/55${numeroAdmin}?text=${mensagem}`;
+            window.open(url, '_blank');
         }
 
         function mostrarInfoPreCadastro(preCadastro) {
