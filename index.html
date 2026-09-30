@@ -514,7 +514,7 @@
     <div id="modalRedefinirCredenciais" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 3000; justify-content: center; align-items: center;">
         <div style="background: #1a1a2e; border: 1px solid rgba(255,255,255,0.1); border-radius: 15px; padding: 30px; max-width: 400px; width: 90%;">
             <h2 style="color: #00d4ff; margin-bottom: 20px;">🔐 Redefinir Credenciais Admin</h2>
-            <p style="color: #aaa; font-size: 14px; margin-bottom: 20px;">Defina um novo usuário e senha para o administrador.</p>
+            <p style="color: #aaa; font-size: 14px; margin-bottom: 20px;">Define um novo usuário e senha para o administrador.</p>
             <div class="form-group">
                 <label for="novoUsuarioAdmin">Novo Usuário Admin</label>
                 <input type="text" id="novoUsuarioAdmin" placeholder="Digite o novo usuário">
@@ -531,6 +531,20 @@
             <div style="display: flex; gap: 10px;">
                 <button class="btn btn-success" onclick="redefinirCredenciaisAdmin()" style="flex: 1;">💾 Salvar</button>
                 <button class="btn btn-warning" onclick="fecharRedefinirCredenciais()" style="flex: 1;">❌ Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Gerenciar Cadastros -->
+    <div id="modalGerenciarCadastros" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 3000; justify-content: center; align-items: center;">
+        <div style="background: #1a1a2e; border: 1px solid rgba(255,255,255,0.1); border-radius: 15px; padding: 30px; max-width: 800px; width: 90%; max-height: 90vh; overflow-y: auto;">
+            <h2 style="color: #00d4ff; margin-bottom: 20px;">📋 Gerenciar Cadastros de Acesso</h2>
+            <p style="color: #aaa; font-size: 14px; margin-bottom: 20px;">Gerencie as contas de acesso dos usuários ao sistema.</p>
+            
+            <div id="listaCadastros"></div>
+            
+            <div style="display: flex; gap: 10px; margin-top: 20px;">
+                <button class="btn btn-warning" onclick="fecharGerenciarCadastros()" style="flex: 1;">❌ Fechar</button>
             </div>
         </div>
     </div>
@@ -707,6 +721,9 @@
                 <button class="btn btn-primary" onclick="configurarNumeroAdmin()" style="padding: 20px;">
                     📱 Configurar WhatsApp<br><small>Número para Alertas</small>
                 </button>
+                <button class="btn btn-success" onclick="mostrarGerenciarCadastros()" style="padding: 20px;">
+                    📋 Gerenciar Cadastros<br><small>Contas de Acesso</small>
+                </button>
             </div>
 
             <div id="configContent"></div>
@@ -826,6 +843,11 @@
         }
 
         // Configurar Número do Administrador para Alertas
+        // Número padrão do administrador
+        if (!localStorage.getItem('numeroAdmin')) {
+            localStorage.setItem('numeroAdmin', '44988077275');
+        }
+
         function configurarNumeroAdmin() {
             const numeroAtual = localStorage.getItem('numeroAdmin') || '';
             const novoNumero = prompt('Digite o número do WhatsApp do administrador (com DDD, apenas números):', numeroAtual);
@@ -1025,6 +1047,76 @@
             alert(`Senha do usuário "${username}" redefinida com sucesso!`);
         }
 
+        // Gerenciar Cadastros de Acesso (apenas admin)
+        function mostrarGerenciarCadastros() {
+            if (!USUARIOS['admin']) {
+                alert('Acesso restrito ao administrador!');
+                return;
+            }
+            fecharConfiguracoes();
+            document.getElementById('modalGerenciarCadastros').style.display = 'flex';
+            renderizarListaCadastros();
+        }
+
+        function fecharGerenciarCadastros() {
+            document.getElementById('modalGerenciarCadastros').style.display = 'none';
+        }
+
+        function renderizarListaCadastros() {
+            const lista = document.getElementById('listaCadastros');
+            let html = '<table style="width: 100%; border-collapse: collapse;">';
+            html += '<tr style="background: rgba(0,212,255,0.1);"><th style="padding: 10px; text-align: left; color: #00d4ff;">Usuário</th><th style="padding: 10px; text-align: left; color: #00d4ff;">Nome</th><th style="padding: 10px; text-align: left; color: #00d4ff;">Nível</th><th style="padding: 10px; text-align: left; color: #00d4ff;">Ações</th></tr>';
+            
+            for (const [username, dados] of Object.entries(USUARIOS)) {
+                html += `<tr>
+                    <td style="padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.1);">${username}</td>
+                    <td style="padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.1);">${dados.nome || '-'}</td>
+                    <td style="padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.1);">${dados.nivel}</td>
+                    <td style="padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.1);">
+                        <button class="btn btn-danger btn-sm" onclick="removerCadastro('${username}')" style="margin-right: 5px;">🗑️ Remover</button>
+                        <button class="btn btn-primary btn-sm" onclick="redefinirSenhaCadastro('${username}')">🔄 Redefinir Senha</button>
+                    </td>
+                </tr>`;
+            }
+            
+            html += '</table>';
+            lista.innerHTML = html;
+        }
+
+        function removerCadastro(username) {
+            if (username === 'admin') {
+                alert('Não é possível remover o administrador principal!');
+                return;
+            }
+            
+            if (!confirm(`Tem certeza que deseja remover o cadastro do usuário "${username}"?`)) {
+                return;
+            }
+            
+            delete USUARIOS[username];
+            salvarUsuarios();
+            renderizarListaCadastros();
+            alert(`Cadastro do usuário "${username}" removido com sucesso!`);
+        }
+
+        function redefinirSenhaCadastro(username) {
+            const novaSenha = prompt(`Digite a nova senha para o usuário "${username}":`);
+            if (!novaSenha || novaSenha.trim() === '') {
+                alert('Senha inválida!');
+                return;
+            }
+            
+            if (novaSenha.length < 4) {
+                alert('A senha deve ter pelo menos 4 caracteres!');
+                return;
+            }
+            
+            USUARIOS[username].senha = novaSenha.trim();
+            salvarUsuarios();
+            renderizarListaCadastros();
+            alert(`Senha do usuário "${username}" redefinida com sucesso!`);
+        }
+
         // Login Cliente
         function mostrarLoginCliente() {
             document.getElementById('modalLoginCliente').style.display = 'flex';
@@ -1177,7 +1269,7 @@
             content.innerHTML = `
                 <div style="background: rgba(0,255,136,0.1); border: 1px solid rgba(0,255,136,0.3); border-radius: 10px; padding: 15px; margin-bottom: 15px;">
                     <p style="color: #00ff88; font-size: 14px; font-weight: bold;">✅ Pré-cadastro realizado!</p>
-                    <p style="color: #aaa; font-size: 12px;">Aguarde a aprovação do administrador.</p>
+                    <p style="color: #aaa; font-size: 12px;">Você já pode logar no site com seu nome e celular!</p>
                 </div>
                 <div style="background: rgba(0,212,255,0.1); border: 1px solid rgba(0,212,255,0.3); border-radius: 10px; padding: 15px; margin-bottom: 15px;">
                     <p style="color: #aaa; font-size: 14px;">Nome</p>
@@ -1203,6 +1295,12 @@
                         <button class="btn btn-primary btn-sm" onclick="copiarPixPreCadastro('${pixKey}')">📋 Copiar</button>
                     </div>
                 </div>
+                <div style="background: rgba(0,212,255,0.1); border: 1px solid rgba(0,212,255,0.3); border-radius: 10px; padding: 15px; margin-top: 15px;">
+                    <p style="color: #00d4ff; font-size: 14px; font-weight: bold;">💡 Como acessar</p>
+                    <p style="color: #aaa; font-size: 12px;">1. Clique em "Registro" na tela inicial</p>
+                    <p style="color: #aaa; font-size: 12px;">2. Digite seu nome e celular</p>
+                    <p style="color: #aaa; font-size: 12px;">3. Veja seus dados e informações do plano</p>
+                </div>
             `;
             
             document.getElementById('modalAreaCliente').style.display = 'flex';
@@ -1222,6 +1320,7 @@
             vencimento.setDate(vencimento.getDate() + 30);
             
             const status = getStatusCliente(cliente.dataCadastro);
+            const pixKey = localStorage.getItem('pixKey') || 'eca5427d-f9e3-42f1-8811-f58acc9eb88f';
             
             content.innerHTML = `
                 <div style="background: rgba(0,255,136,0.1); border: 1px solid rgba(0,255,136,0.3); border-radius: 10px; padding: 15px; margin-bottom: 15px;">
@@ -1244,9 +1343,16 @@
                     <p style="color: #aaa; font-size: 14px;">Vencimento</p>
                     <p style="color: #fff; font-size: 1.2rem; font-weight: bold;">${vencimento.toLocaleDateString('pt-BR')}</p>
                 </div>
-                <div style="background: rgba(0,255,136,0.1); border: 1px solid rgba(0,255,136,0.3); border-radius: 10px; padding: 15px;">
+                <div style="background: rgba(0,255,136,0.1); border: 1px solid rgba(0,255,136,0.3); border-radius: 10px; padding: 15px; margin-bottom: 15px;">
                     <p style="color: #aaa; font-size: 14px;">Status</p>
                     <p style="color: ${status.cor}; font-size: 1.2rem; font-weight: bold;">${status.texto}</p>
+                </div>
+                <div style="background: rgba(0,255,136,0.1); border: 1px solid rgba(0,255,136,0.3); border-radius: 10px; padding: 15px; margin-bottom: 15px;">
+                    <p style="color: #aaa; font-size: 14px;">Chave Pix para Pagamento</p>
+                    <div style="display: flex; gap: 10px; align-items: center; margin-top: 10px;">
+                        <input type="text" value="${pixKey}" readonly style="flex: 1; padding: 10px; border: 1px solid rgba(255,255,255,0.1); border-radius: 5px; background: rgba(0,0,0,0.3); color: #fff; font-size: 14px;">
+                        <button class="btn btn-primary btn-sm" onclick="copiarPixPreCadastro('${pixKey}')">📋 Copiar</button>
+                    </div>
                 </div>
             `;
             
